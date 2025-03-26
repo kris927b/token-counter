@@ -1,7 +1,7 @@
 import sys
 from loguru import logger
 from typer import Typer
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, Encoding
 
 app = Typer(name="Token Counter")
 
@@ -10,34 +10,34 @@ def get_tokenizer(model: str = "gpt2") -> Tokenizer:
     return Tokenizer.from_pretrained(model)
 
 
-def count_tokens_stream(tokenizer: Tokenizer, chunk_size: int = 1024 * 1024):
-    """Process stdin in chunks and count tokens efficiently"""
+def count_tokens_stream(tokenizer: Tokenizer, batch_size: int = 1000):
+    """Stream stdin, tokenize in batches, and count tokens efficiently"""
     total_tokens = 0
     buffer = []
 
-    while True:
-        chunk = sys.stdin.read(chunk_size)
-        if not chunk:
-            break
-        buffer.append(chunk)
+    for line in sys.stdin:
+        buffer.append(line.strip())
 
-        # Tokenize only the full text in buffer
-        encoding = tokenizer.encode("".join(buffer))
-        total_tokens += len(encoding.tokens)
+        if len(buffer) >= batch_size:
+            # Tokenize batch and count tokens
+            encodings: list[Encoding] = tokenizer.encode_batch(buffer)
+            total_tokens += sum(len(enc.tokens) for enc in encodings)
+            buffer.clear()  # Free memory
 
-        # Clear buffer to free memory
-        buffer.clear()
+    # Process remaining lines in buffer
+    if buffer:
+        encodings: list[Encoding] = tokenizer.encode_batch(buffer)
+        total_tokens += sum(len(enc.tokens) for enc in encodings)
 
     return total_tokens
 
 
 @app.command()
 def main(model: str = "gpt2"):
-    """CLI tool to count tokens in text from stdin (handles large files)"""
+    """CLI tool to count tokens in text from stdin efficiently"""
     logger.info(f"Tokenizing text using: {model}")
 
     tokenizer = get_tokenizer(model)
-
     token_count = count_tokens_stream(tokenizer)
 
     logger.info(f"Token count: {token_count}")
