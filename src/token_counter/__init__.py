@@ -11,7 +11,7 @@ def get_tokenizer(model: str = "gpt2") -> Tokenizer:
     return tokenizer
 
 
-@app.command(no_args_is_help=True)
+@app.command()
 def main(model: str = "gpt2"):
     """CLI tool to count tokens in text from stdin"""
     # Read text from stdin
@@ -21,7 +21,7 @@ def main(model: str = "gpt2"):
         logger.error("No input provided. Please pipe or redirect text to stdin.")
         sys.exit(1)
 
-    logger.info(f"Tokenizing using: {model}")
+    logger.info(f"Tokenizing text using: {model}")
 
     tokenizer = get_tokenizer(model)
 

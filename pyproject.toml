@@ -19,3 +19,8 @@ token-counter = "token_counter:app"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "pytest>=8.3.5",
+]
